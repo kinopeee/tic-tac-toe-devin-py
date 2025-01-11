@@ -16,6 +16,9 @@ function App() {
   const [squares, setSquares] = useState<Array<string | null>>(Array(9).fill(null))
   const [xIsNext, setXIsNext] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [localPlayerSymbol, setLocalPlayerSymbol] = useState<"○" | "×" | null>(null)
+  const [isWinner, setIsWinner] = useState(false)
+  const [isLoser, setIsLoser] = useState(false)
   const socket = useRef<WebSocket | null>(null)
 
   const calculateWinner = (squares: Array<string | null>): string | null => {
@@ -73,6 +76,16 @@ function App() {
       const data = JSON.parse(event.data)
       setSquares(data.squares)
       setXIsNext(data.xIsNext)
+      if (data.playerSymbol) {
+        setLocalPlayerSymbol(data.playerSymbol)
+      }
+      if (data.winner) {
+        setIsWinner(data.isWinner || false)
+        setIsLoser(data.isLoser || false)
+      } else {
+        setIsWinner(false)
+        setIsLoser(false)
+      }
     }
 
     socket.current.onclose = () => {
@@ -112,21 +125,31 @@ function App() {
     setSearchParams({})
     setSquares(Array(9).fill(null))
     setXIsNext(true)
+    setIsWinner(false)
+    setIsLoser(false)
+    setLocalPlayerSymbol(null)
     socket.current?.close()
   }
 
   const winner = calculateWinner(squares)
   const isDraw = !winner && squares.every(square => square !== null)
   let status = ''
-  let loser = null
   
   if (winner) {
-    status = `勝者: ${winner}`
-    loser = winner === '○' ? '×' : '○'
+    if (isWinner) {
+      status = `勝者: ${localPlayerSymbol}`
+    } else if (isLoser) {
+      status = `負けました...`
+    } else {
+      status = `勝者: ${winner}`
+    }
   } else if (isDraw) {
     status = '引き分け！'
   } else {
-    status = `次のプレイヤー: ${xIsNext ? '○' : '×'}`
+    const currentPlayer = xIsNext ? '○' : '×'
+    status = currentPlayer === localPlayerSymbol ? 
+      'あなたの番です！' : 
+      `${currentPlayer}の番です`
   }
 
   if (!roomId) {
@@ -180,25 +203,62 @@ function App() {
             <span className="text-[hsl(var(--foreground))]">ルームID: {roomId}</span>
             <br />
             {winner ? (
-              <>
-                <div className="animate-celebration-bounce flex items-center justify-center gap-2 text-[hsl(var(--winner-glow))]">
-                  <Trophy className="w-6 h-6 animate-winner-glow" />
-                  <span className="font-bold text-lg">
-                    勝者: {winner}
-                  </span>
-                  <Trophy className="w-6 h-6 animate-winner-glow" />
+              isWinner ? (
+                <div className="animate-celebration-bounce flex flex-col items-center justify-center gap-2">
+                  <div className="flex items-center justify-center gap-2">
+                    <Trophy className="w-8 h-8 animate-winner-glow text-yellow-500" />
+                    <span className="font-bold text-xl bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 bg-clip-text text-transparent animate-text-shimmer">
+                      勝者: {localPlayerSymbol}
+                    </span>
+                    <Trophy className="w-8 h-8 animate-winner-glow text-yellow-500" />
+                  </div>
+                  <div className="text-sm text-yellow-500 animate-pulse">
+                    素晴らしい勝利！
+                  </div>
                 </div>
-                <div className="animate-loser-shake mt-2 text-[hsl(var(--loser-fade))]">
-                  残念！ {loser} の負け
+              ) : isLoser ? (
+                <div className="animate-loser-shake flex flex-col items-center justify-center gap-2">
+                  <div className="text-[hsl(var(--loser-fade))] opacity-50">
+                    <span className="font-semibold text-xl blur-[0.5px]">負けました...</span>
+                  </div>
+                  <div className="text-sm text-[hsl(var(--loser-fade))] animate-pulse">
+                    次は勝てるよ！
+                  </div>
+                  <div className="w-full h-full absolute inset-0 bg-gray-900/10 backdrop-blur-[1px] pointer-events-none"></div>
                 </div>
-              </>
+              ) : (
+                <span className="font-semibold text-[hsl(var(--button-primary))]">{status}</span>
+              )
             ) : (
               <span className="font-semibold text-[hsl(var(--button-primary))]">{status}</span>
             )}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {winner && <Confetti numberOfPieces={200} recycle={false} />}
+          {isWinner && (
+            <>
+              <Confetti
+                numberOfPieces={1000}
+                recycle={false}
+                colors={['#FFD700', '#FFA500', '#FF69B4', '#FF1493', '#00FF00', '#4169E1']}
+                gravity={0.15}
+                tweenDuration={8000}
+                wind={0.02}
+                width={window.innerWidth}
+                height={window.innerHeight}
+              />
+              <Confetti
+                numberOfPieces={300}
+                recycle={true}
+                colors={['#FFD700', '#FFA500']}
+                gravity={0.1}
+                tweenDuration={10000}
+                wind={-0.02}
+                width={window.innerWidth}
+                height={window.innerHeight}
+              />
+            </>
+          )}
           <div className="grid grid-cols-3 gap-2 mb-4">
             {squares.map((value, i) => (
               <Button
@@ -210,8 +270,8 @@ function App() {
                   ${value === '×' ? 'text-[hsl(var(--player-x))] hover:bg-[hsl(var(--player-x))/5]' : ''}
                   hover:border-[hsl(var(--button-primary))] hover:shadow-md hover:scale-105
                   disabled:opacity-80 disabled:hover:border-none disabled:hover:shadow-none disabled:hover:scale-100
-                  ${winner && squares[i] === winner ? 'animate-winner-glow border-[hsl(var(--winner-glow))] bg-[hsl(var(--winner-glow))/5]' : ''}
-                  ${winner && squares[i] === loser ? 'animate-loser-shake opacity-50 grayscale' : ''}`}
+                  ${isWinner && squares[i] === localPlayerSymbol ? 'animate-winner-glow border-[hsl(var(--winner-glow))] bg-[hsl(var(--winner-glow))/5]' : ''}
+                  ${isLoser && squares[i] === localPlayerSymbol ? 'animate-loser-shake opacity-50 grayscale' : ''}`}
                 disabled={!!value || !!winner}
               >
                 {value}
