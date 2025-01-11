@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Bright, colorful theme */
+    --background: 220 100% 97%;
+    --foreground: 222 47% 11%;
+    
+    /* Game pieces colors */
+    --player-x: 330 100% 50%;  /* Vibrant pink for X */
+    --player-o: 200 100% 50%;  /* Bright blue for O */
+    
+    /* Card and button colors */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --button-primary: 280 100% 60%;  /* Purple */
+    --button-secondary: 150 100% 45%; /* Green */
+    
+    /* Animation colors */
+    --winner-glow: 160 100% 50%;
+    --loser-fade: 0 0% 60%;
+    
+    /* Border radius */
+    --radius: 0.75rem;
+  }
+}
+@layer base {
+  :root {
+    --radius: 0.5rem
+  ;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%}
+  .dark {
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%
+  }
+}
+
